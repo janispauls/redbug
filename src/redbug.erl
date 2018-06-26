@@ -12,6 +12,14 @@
 -export([start/1,start/2,start/3,start/4,start/5]).
 -export([stop/0]).
 
+-ifdef('FUN_STACKTRACE').
+-define(CAPTURE_STACKTRACE, ).
+-define(GET_STACKTRACE, erlang:get_stacktrace()).
+-else.
+-define(CAPTURE_STACKTRACE, :__StackTrace).
+-define(GET_STACKTRACE, __StackTrace).
+-endif.
+
 -define(log(T),log([process_info(self(),current_function),{line,?LINE}],T)).
 log(HD,T) -> error_logger:info_report(HD++T).
 
@@ -215,10 +223,10 @@ init(Cnf) ->
   catch
     R ->
       exit({argument_error,R});
-    C:R ->
+    C:R ?CAPTURE_STACKTRACE ->
       case Cnf#cnf.debug andalso not Cnf#cnf.blocking of
         false-> ok;
-        true -> ?log([{C,R},{stack,erlang:get_stacktrace()}])
+        true -> ?log([{C,R},{stack,?GET_STACKTRACE}])
       end,
       exit(R)
   end.
